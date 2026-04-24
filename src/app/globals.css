@@ -20,23 +20,18 @@
   }
 }
 
-body {
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
-}
-
-/* Mobile: fixed bottom nav */
-@media (max-width: 639px) {
-  body {
-    overflow: hidden;
-    height: 100dvh;
-  }
-
-  main {
-    height: calc(100dvh - var(--nav-height)) !important;
-    overflow: hidden;
-  }
 }
 
 /* Prevent iOS zoom on input focus */
@@ -46,7 +41,33 @@ input, textarea, select {
 
 /* Safe area for notch phones */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
-  nav {
+  .mobile-nav {
     padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Mobile layout: column with bottom nav */
+@media (max-width: 639px) {
+  .app-layout {
+    flex-direction: column !important;
+  }
+  .desktop-sidebar {
+    display: none !important;
+  }
+  .mobile-nav {
+    display: flex !important;
+  }
+  .app-content {
+    height: calc(100% - var(--nav-height)) !important;
+  }
+}
+
+/* Desktop layout: row with sidebar */
+@media (min-width: 640px) {
+  .desktop-sidebar {
+    display: flex !important;
+  }
+  .mobile-nav {
+    display: none !important;
   }
 }

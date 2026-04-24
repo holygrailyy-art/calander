@@ -45,13 +45,15 @@ export default function RootLayout({
   return (
     <html
       lang="zh-CN"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable}`}
     >
-      <body className="h-full flex flex-col sm:flex-row">
-        <Sidebar />
-        <main className="flex-1 min-h-0 overflow-hidden">
-          {children}
-        </main>
+      <body>
+        <div className="app-layout flex flex-row h-full">
+          <Sidebar />
+          <div className="app-content flex-1 h-full overflow-hidden">
+            {children}
+          </div>
+        </div>
       </body>
     </html>
   );
