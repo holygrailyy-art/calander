@@ -39,30 +39,28 @@ export default function Sidebar() {
   const [feishuConnected, setFeishuConnected] = useState(false);
 
   useEffect(() => {
-    fetch("/api/feishu/status")
-      .then((r) => r.json())
-      .then((d) => setFeishuConnected(d.connected))
-      .catch(() => {});
+    const timeout = setTimeout(() => {
+      fetch("/api/feishu/status", { signal: AbortSignal.timeout(5000) })
+        .then((r) => r.json())
+        .then((d) => setFeishuConnected(d.connected))
+        .catch(() => {});
+    }, 100);
+    return () => clearTimeout(timeout);
   }, []);
 
   const feishuItem = (
-    <a
-      href={feishuConnected ? undefined : "/api/feishu/auth"}
-      className={`flex items-center gap-2 text-sm font-medium ${
-        feishuConnected ? "text-green-600" : "text-blue-500"
-      }`}
-    >
+    <div className={`flex items-center gap-2 text-sm font-medium ${feishuConnected ? "text-green-600" : "text-zinc-400"}`}>
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
       </svg>
       {feishuConnected ? "已连接" : "飞书"}
-    </a>
+    </div>
   );
 
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="desktop-sidebar w-64 bg-white border-r border-zinc-200 flex-col h-full" style={{ display: "none" }}>
+      <aside className="desktop-sidebar w-64 bg-white border-r border-zinc-200 flex-col h-full">
         <div className="p-6 border-b border-zinc-100">
           <h1 className="text-lg font-semibold text-zinc-900">AI 日程助手</h1>
           <p className="text-xs text-zinc-500 mt-1">日程 + 费用 智能管理</p>
@@ -98,12 +96,12 @@ export default function Sidebar() {
               飞书已连接
             </div>
           ) : (
-            <a
-              href="/api/feishu/auth"
-              className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
-            >
-              连接飞书日历
-            </a>
+            <div className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-500 bg-zinc-50 rounded-lg">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+              </svg>
+              飞书未配置
+            </div>
           )}
         </div>
       </aside>
@@ -111,7 +109,7 @@ export default function Sidebar() {
       {/* Mobile bottom nav */}
       <nav
         className="mobile-nav items-center justify-around bg-white border-t border-zinc-200 px-2"
-        style={{ display: "none", height: "var(--nav-height)", flexShrink: 0 }}
+        style={{ height: "var(--nav-height)", flexShrink: 0 }}
       >
         {navItems.map((item) => {
           const isActive = pathname === item.href;

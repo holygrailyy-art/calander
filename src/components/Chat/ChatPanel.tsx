@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import { ChatMessage } from "@/types/chat";
 import { OrchestratorResponse } from "@/types/agent";
 import MessageList from "./MessageList";
@@ -10,16 +11,63 @@ function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
+const feishuErrorMap: Record<string, string> = {
+  missing_code: "缺少授权码，请重新尝试",
+  exception: "连接飞书时发生错误，请稍后重试",
+  invalid_client: "飞书应用配置错误，请联系管理员",
+  redirect_uri_mismatch: "回调地址不匹配，请检查飞书开放平台配置",
+};
+
+function buildFeishuMessage(
+  searchParams: URLSearchParams
+): ChatMessage | null {
+  const error = searchParams.get("feishu_error");
+  const connected = searchParams.get("feishu_connected");
+
+  if (connected === "true") {
+    return {
+      id: generateId(),
+      role: "assistant",
+      content: "飞书已成功连接！现在可以同步日程了。",
+      timestamp: new Date(),
+    };
+  }
+
+  if (error) {
+    const errorMsg = feishuErrorMap[error] || `飞书连接失败：${error}`;
+    return {
+      id: generateId(),
+      role: "assistant",
+      content: `飞书连接失败：${errorMsg}\n\n请检查：\n1. Vercel 环境变量是否配置了 FEISHU_APP_ID 和 FEISHU_APP_SECRET\n2. 飞书开放平台的回调地址是否配置正确`,
+      timestamp: new Date(),
+    };
+  }
+
+  return null;
+}
+
 export default function ChatPanel() {
+  const searchParams = useSearchParams();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+  const feishuHandledRef = useRef(false);
+
+  const feishuInitialMessage = useMemo(
+    () => buildFeishuMessage(searchParams),
+    [searchParams]
+  );
 
   // Load conversation history on mount
   useEffect(() => {
-    fetch("/api/chat")
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+    fetch("/api/chat", { signal: controller.signal })
       .then((r) => r.json())
       .then((data) => {
+        const loadedMessages: ChatMessage[] = [];
+
         if (data.messages && data.messages.length > 0) {
           const loaded: ChatMessage[] = data.messages.map(
             (m: { role: string; content: string }, i: number) => ({
@@ -29,11 +77,26 @@ export default function ChatPanel() {
               timestamp: new Date(),
             })
           );
-          setMessages(loaded);
+          loadedMessages.push(...loaded);
+        }
+
+        if (feishuInitialMessage && !feishuHandledRef.current) {
+          feishuHandledRef.current = true;
+          loadedMessages.push(feishuInitialMessage);
+        }
+
+        setMessages(loadedMessages);
+      })
+      .catch(() => {
+        if (feishuInitialMessage && !feishuHandledRef.current) {
+          feishuHandledRef.current = true;
+          setMessages([feishuInitialMessage]);
         }
       })
-      .catch(() => {})
-      .finally(() => setInitialLoading(false));
+      .finally(() => {
+        clearTimeout(timeoutId);
+        setInitialLoading(false);
+      });
   }, []);
 
   async function sendMessage(message: string) {
@@ -89,8 +152,8 @@ export default function ChatPanel() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="border-b border-zinc-200 px-4 sm:px-6 py-3 sm:py-4 bg-white">
-        <h2 className="text-base font-semibold text-zinc-900">对话</h2>
+      <div className="border-b border-zinc-200 px-3 sm:px-6 py-2.5 sm:py-4 bg-white">
+        <h2 className="text-sm sm:text-base font-semibold text-zinc-900">对话</h2>
         <p className="text-xs text-zinc-500">用自然语言管理日程和费用 · 说「撤销」可回退上一步</p>
       </div>
       <MessageList messages={messages} loading={loading} />
