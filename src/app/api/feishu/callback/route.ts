@@ -6,7 +6,10 @@ export async function GET(req: NextRequest) {
   const code = searchParams.get("code");
   const error = searchParams.get("error");
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  // Use the request origin for redirects
+  const origin = req.headers.get("origin") || req.headers.get("host");
+  const protocol = req.headers.get("x-forwarded-proto") || "http";
+  const baseUrl = origin?.startsWith("http") ? origin : `${protocol}://${origin}`;
 
   if (error) {
     return NextResponse.redirect(new URL(`/?feishu_error=${error}`, baseUrl));
@@ -37,13 +40,13 @@ export async function GET(req: NextRequest) {
     console.log("[Feishu OAuth] Token response:", JSON.stringify(data, null, 2));
 
     if (data.access_token) {
-      setUserAccessToken(data.access_token, data.refresh_token);
+      await setUserAccessToken(data.access_token, data.refresh_token);
       return NextResponse.redirect(new URL("/?feishu_connected=true", baseUrl));
     }
 
     const errMsg = data.msg || data.error_description || data.error || "unknown_error";
     return NextResponse.redirect(new URL(`/?feishu_error=${encodeURIComponent(errMsg)}`, baseUrl));
-  } catch (e) {
-    return NextResponse.redirect(new URL(`/?feishu_error=exception`, baseUrl));
+  } catch {
+    return NextResponse.redirect(new URL("/?feishu_error=exception", baseUrl));
   }
 }
