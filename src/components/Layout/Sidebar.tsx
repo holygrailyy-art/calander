@@ -98,7 +98,7 @@ export default function Sidebar() {
       </aside>
 
       {/* Mobile bottom nav */}
-      <nav className="sm:hidden flex items-center justify-around bg-white border-t border-zinc-200 py-2 px-4">
+      <nav className="sm:hidden flex items-center justify-around bg-white border-t border-zinc-200 py-2 px-2" style={{ height: "var(--nav-height)" }}>
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           return (

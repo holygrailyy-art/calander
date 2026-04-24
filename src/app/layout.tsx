@@ -33,6 +33,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  viewportFit: "cover",
   themeColor: "#18181b",
 };
 
@@ -46,9 +47,9 @@ export default function RootLayout({
       lang="zh-CN"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col sm:flex-row">
+      <body className="h-full flex flex-col sm:flex-row">
         <Sidebar />
-        <main className="flex-1 h-[calc(100vh-0px)] sm:h-screen overflow-hidden">
+        <main className="flex-1 min-h-0 overflow-hidden">
           {children}
         </main>
       </body>
